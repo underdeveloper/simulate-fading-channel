@@ -33,24 +33,24 @@ for k = 1:length(ebno_db)
 
         % Rx
         rx_raw(j,:) = tx_data_bpsk(j,:) + awgn_noise(j,:); % Combines symbol stream with noise channel by simple addition
-%         rx_raw(j,:) = awgn(tx_data_bpsk(j,:),ebno_dB(i)); % This is a lot better haha
+%         rx_raw(j,:) = awgn(tx_data_bpsk(j,:),ebno_db(k)); % This is a lot better haha
         rx_decoded(j,:) = bpsk_demodulate(rx_raw(j,:)); % Demodulates symbol stream into bitstream
-        ber(j) = sum(tx_data_bpsk(j,:)==rx_decoded(j,:)) / data_length;
+        ber(j) = sum(tx_data_binary(j,:)~=rx_decoded(j,:)) / data_length;
     end
     mean_ber(k) = mean(ber);
 end
 
 % Theoretical
-% ebno_theoretical_dB = ebno_dB; % Uncomment if you want them to be the same
-ebno_theoretical_dB = 0:0.1:10; % Comment if you want them to be the same
-ebno_theoretical_num = 10.^(ebno_theoretical_dB/10);
+% ebno_theoretical_db = ebno_dB; % Uncomment if you want them to be the same
+ebno_theoretical_db = 0:0.1:10; % Comment if you want them to be the same
+ebno_theoretical_num = 10.^(ebno_theoretical_db/10);
 ber_theoretical = 0.5*(erfc(sqrt(ebno_theoretical_num)));
 
 % Plotting whopee
 figure(1)
 semilogy(ebno_db, mean_ber,'-r','marker','o','color','#1ef7f4',LineWidth=2);
 hold on;
-semilogy(ebno_theoretical_dB, ber_theoretical,'--g','color','#0988ba',LineWidth=2);
+semilogy(ebno_theoretical_db, ber_theoretical,'--g','color','#0988ba',LineWidth=2);
 grid on;
 xlim([0 30]);
 ylim([1e-6 1e0]);

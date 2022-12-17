@@ -4,7 +4,7 @@
 
 clc;
 clear;
-close all;
+% close all;
 
 data_length = 1e6;
 ebno_dB = 0:5:25;
@@ -40,7 +40,7 @@ for k = 1:length(ebno_dB)
         % Rx
         rx_raw(j,:) = tx_data_bpsk(j,:).*fading_channel + 10^(-ebno_dB(k)/20)*noise(j,:); % Combines symbol stream with noise channel by simple addition
         rx_decoded(j,:) = bpsk_demodulate(rx_raw(j,:)); % Demodulates symbol stream into bitstream
-        ber(j) = sum(tx_data_bpsk(j,:)~=rx_decoded(j,:)) / data_length;
+        ber(j) = sum(tx_data_binary(j,:)~=rx_decoded(j,:)) / data_length;
     end
     mean_ber(k) = mean(ber);
 end
@@ -53,10 +53,10 @@ ebno_theoretical = 10.^(ebno_theoretical_dB/10);
 ber_theoretical = 0.5*(1-(sqrt((ebno_theoretical)./(1+ebno_theoretical))));
 
 % Plotting whopee
-figure(1)
-semilogy(ebno_dB, mean_ber,'-r','marker','o','color','#1ef7f4',LineWidth=2);
+figure(2)
+semilogy(ebno_dB, mean_ber,'-r','marker','x','color','#e04f3f',LineWidth=2);
 hold on;
-semilogy(ebno_theoretical_dB, ber_theoretical,'--g','color','#0988ba',LineWidth=2);
+semilogy(ebno_theoretical_dB, ber_theoretical,'--g','color','#9e1708',LineWidth=2);
 grid on;
 xlim([0 30]);
 ylim([1e-6 1e0]);
