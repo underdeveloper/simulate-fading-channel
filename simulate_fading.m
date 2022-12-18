@@ -23,13 +23,14 @@ rx_equalised_t2 = zeros(carlo_t2, data_length_t2);
 rx_decoded_t2 = zeros(carlo_t2, data_length_t2);
 ber_t2 = zeros(carlo_t2,1);
 mean_ber_t2 = zeros(length(ebno_t2_db),1);
-fading_var_t2 = ones(carlo_t2, 1);
+% fading_var_t2 = ones(carlo_t2, 1);
 
 
 % Fading channel configuration
-fading_channel_t2 = fading(data_length_t2, f_Doppler_t2, 1/data_rate_t2)';
-% To be honest, I still don't get what this function actually does.
-% Is this only small scale fading?  
+% fading_channel_t2 = fading(data_length_t2, f_Doppler_t2, 1/data_rate_t2)';
+% % To be honest, I still don't get what this function actually does.
+% % Is this only small scale fading?  
+fading_channel_t2 = fading2(data_length_t2, f_Doppler_t2, 1/data_rate_t2); % Using someone else's code
 
 for k = 1:length(ebno_t2_db)
     for j = 1:carlo_t2
@@ -40,8 +41,10 @@ for k = 1:length(ebno_t2_db)
         % Channel
 %         fading_var_t2(j) = sum(abs(fading_channel_t2.*tx_data_bpsk_t2(j,:)).^2/data_length_t2); % Let's say no variance for now
         awgn_noise_t2(j,:) = (1/sqrt(2))*(randn(data_length_t2, 1)+1i*randn(data_length_t2, 1)); % Generates noise according to Eb/No
-        rx_raw_t2(j,:) = tx_data_bpsk_t2(j,:).*fading_channel_t2 + ...
-            10^(-ebno_t2_db(k)/20)*awgn_noise_t2(j,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
+        rx_raw_t2(j,:) = tx_data_bpsk_t2(j,:).*fading_channel_t2;
+%             + 10^(-ebno_t2_db(k)/20)*awgn_noise_t2(j,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
+% THE FAULT IS DEFINITELY HERE!!! ITS IN THE FADING CHANNEL BUT IDK HOW TO
+% SOLVE IT
 
         % Rx
         rx_equalised_t2(j,:) = rx_raw_t2(j,:)./fading_channel_t2; % Equalizing according to fading channel estimation, for now assume Rx knows exactly what the channel characteristics are
@@ -62,7 +65,7 @@ ber_theoretical_t2 = 0.5*(1-(sqrt((ebno_theoretical_t2)./(1+ebno_theoretical_t2)
 figure(3)
 semilogy(ebno_t2_db, mean_ber_t2,'-r','marker','o','color','#e04f3f',LineWidth=2);
 hold on;
-semilogy(ebno_theoretical_t2_db, ber_theoretical_t2,'--g','color','#9e1708',LineWidth=2);
+semilogy(ebno_theoretical_t2_db, ber_theoretical_t2,'--g','color','#9e1708',LineWidth=1);
 grid on;
 xlim([0 30]);
 ylim([1e-6 1e0]);
@@ -77,7 +80,7 @@ title("BER Performance in a Rayleigh fading channel");
 figure(4)
 set(gcf,'Position',[800 100 1000 400])
 subplot(1,2,1);
-scatter(real(tx_data_bpsk_t2(j,1:1000:data_length_t2)), imag(tx_data_bpsk_t2(j,1:1000:data_length_t2)), 'color', '#0988ba');
+scatter(real(tx_data_bpsk_t2(j,1:10:data_length_t2)), imag(tx_data_bpsk_t2(j,1:10:data_length_t2)), 'color', '#0988ba');
 grid on;
 axis([-2 2 -2 2]);
 xlabel('Real');
@@ -85,7 +88,7 @@ ylabel('Imaginary');
 title("Constellation at Tx");
 hold off;
 subplot(1,2,2);
-scatter(real(rx_equalised_t2(j,1:1000:data_length_t2)), imag(rx_equalised_t2(j,1:1000:data_length_t2)), 'color','#1ef7f4');
+scatter(real(rx_equalised_t2(j,1:10:data_length_t2)), imag(rx_equalised_t2(j,1:10:data_length_t2)), 'color','#1ef7f4');
 grid on;
 axis([-2 2 -2 2]);
 xlabel('Real');
