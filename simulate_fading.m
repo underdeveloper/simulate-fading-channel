@@ -5,6 +5,7 @@
 clc;
 % clear;
 % close all;
+clf;
 
 data_length_t2 = 1e6;
 ebno_t2_db = 0:5:25;
@@ -42,8 +43,6 @@ for k = 1:length(ebno_t2_db)
 %         fading_var_t2(j) = sum(abs(fading_channel_t2.*tx_data_bpsk_t2(j,:)).^2/data_length_t2); % Let's say no variance for now
         awgn_noise_t2(j,:) = (1/sqrt(2))*(randn(data_length_t2, 1)+1i*randn(data_length_t2, 1)); % Generates noise according to Eb/No
         rx_raw_t2(j,:) = tx_data_bpsk_t2(j,:).*fading_channel_t2 + 10^(-ebno_t2_db(k)/20)*awgn_noise_t2(j,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
-% THE FAULT IS DEFINITELY HERE!!! ITS IN THE FADING CHANNEL BUT IDK HOW TO
-% SOLVE IT
 
         % Rx
         rx_equalised_t2(j,:) = rx_raw_t2(j,:)./fading_channel_t2; % Equalizing according to fading channel estimation, for now assume Rx knows exactly what the channel characteristics are
@@ -62,9 +61,9 @@ ber_theoretical_t2 = 0.5*(1-(sqrt((ebno_theoretical_t2)./(1+ebno_theoretical_t2)
 
 % Plotting whopee
 figure(3)
-semilogy(ebno_t2_db, mean_ber_t2,'-r','marker','o','color','#e04f3f',LineWidth=2);
+semilogy(ebno_t2_db, mean_ber_t2,'-r','marker','o','color','#e04f3f',LineWidth=1);
 hold on;
-semilogy(ebno_theoretical_t2_db, ber_theoretical_t2,'--g','color','#9e1708',LineWidth=1);
+semilogy(ebno_theoretical_t2_db, ber_theoretical_t2,'--g','color','#9e1708',LineWidth=1.5);
 grid on;
 xlim([0 30]);
 ylim([1e-6 1e0]);
