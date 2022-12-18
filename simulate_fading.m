@@ -11,13 +11,13 @@ ebno_dB = 0:5:25;
 f_Doppler = 30; % Doppler shift frequency in Hz
 data_rate = 64e3; % in bits per second (bps)
 
-carlo = 1; % Monte Carlo
+carlo = 10; % Monte Carlo
 
 % Preallocating memory (for performance reasons)
 % There's actually no need to do this if data_length is relatively small I just like doing it
 tx_data_binary = zeros(carlo, data_length);
 tx_data_bpsk = zeros(carlo, data_length);
-noise = zeros(carlo, data_length);
+awgn_noise = zeros(carlo, data_length);
 rx_raw = zeros(carlo, data_length);
 rx_decoded = zeros(carlo, data_length);
 ber = zeros(carlo,1);
@@ -35,10 +35,10 @@ for k = 1:length(ebno_dB)
 
         % Channel
         fading_var(j) = sum(abs(fading_channel.*tx_data_bpsk(j,:)).^2/data_length);
-        noise(j,:) = 1/sqrt(2/fading_var(j))*(randn(data_length, 1)+j*randn(data_length, 1));
+        awgn_noise(j,:) = 1/sqrt(2/fading_var(j))*(randn(data_length, 1)+1i*randn(data_length, 1));
 
         % Rx
-        rx_raw(j,:) = tx_data_bpsk(j,:).*fading_channel + 10^(-ebno_dB(k)/20)*noise(j,:); % Combines symbol stream with noise channel by simple addition
+        rx_raw(j,:) = tx_data_bpsk(j,:).*fading_channel + 10^(-ebno_dB(k)/20)*awgn_noise(j,:); % Combines symbol stream with noise channel by simple addition
         rx_decoded(j,:) = bpsk_demodulate(rx_raw(j,:)); % Demodulates symbol stream into bitstream
         ber(j) = sum(tx_data_binary(j,:)~=rx_decoded(j,:)) / data_length;
     end

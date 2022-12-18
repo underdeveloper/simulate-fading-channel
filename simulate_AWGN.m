@@ -8,7 +8,7 @@ close all;
 
 data_length = 1e6;
 ebno_db = 0:2:8;
-ebno_num = 10.^(ebno_db/10);
+ebno_num = 10.^(ebno_db/10); % Note to myself: Eb/No is a power value so dB to numerical conversion is /10
 
 carlo = 5; % Monte Carlo
 
@@ -29,7 +29,7 @@ for k = 1:length(ebno_db)
         tx_data_bpsk(j,:) = bpsk_modulate(tx_data_binary(j,:)); % Modulates bit stream into symbol stream with BPSK
 
         % Channel
-        awgn_noise(j,:) = (1/sqrt(2*ebno_num(k)))*randn(data_length, 1); % Generates noise according to Eb/No
+        awgn_noise(j,:) = (1/sqrt(2*ebno_num(k)))*(randn(data_length, 1)+1i*randn(data_length, 1)); % Generates noise according to Eb/No
 
         % Rx
         rx_raw(j,:) = tx_data_bpsk(j,:) + awgn_noise(j,:); % Combines symbol stream with noise channel by simple addition
