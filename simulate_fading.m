@@ -41,14 +41,13 @@ for k = 1:length(ebno_t2_db)
         % Channel
 %         fading_var_t2(j) = sum(abs(fading_channel_t2.*tx_data_bpsk_t2(j,:)).^2/data_length_t2); % Let's say no variance for now
         awgn_noise_t2(j,:) = (1/sqrt(2))*(randn(data_length_t2, 1)+1i*randn(data_length_t2, 1)); % Generates noise according to Eb/No
-        rx_raw_t2(j,:) = tx_data_bpsk_t2(j,:).*fading_channel_t2;
-%             + 10^(-ebno_t2_db(k)/20)*awgn_noise_t2(j,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
+        rx_raw_t2(j,:) = tx_data_bpsk_t2(j,:).*fading_channel_t2 + 10^(-ebno_t2_db(k)/20)*awgn_noise_t2(j,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
 % THE FAULT IS DEFINITELY HERE!!! ITS IN THE FADING CHANNEL BUT IDK HOW TO
 % SOLVE IT
 
         % Rx
         rx_equalised_t2(j,:) = rx_raw_t2(j,:)./fading_channel_t2; % Equalizing according to fading channel estimation, for now assume Rx knows exactly what the channel characteristics are
-        rx_decoded_t2(j,:) = bpsk_demodulate(rx_raw_t2(j,:)); % Demodulates symbol stream into bitstream
+        rx_decoded_t2(j,:) = bpsk_demodulate(rx_equalised_t2(j,:)); % Demodulates symbol stream into bitstream
         ber_t2(j) = sum(tx_data_binary_t2(j,:)~=rx_decoded_t2(j,:)) / data_length_t2;
     end
     mean_ber_t2(k) = mean(ber_t2);
