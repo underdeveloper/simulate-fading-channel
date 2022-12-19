@@ -19,12 +19,18 @@ tx_power_t3 = 1;             % Power transmitted by Tx, in Watts (just set it to
 
 % Receiving side
 rx_pc_sample_rate_t3 = 1800; % Power control sampling rate in Hz
-rx_pc_step_size_t3_db = 10;  % Power control step size, in dB    
+pc_step_size_t3_db = 0;  % Power control step size, in dB    
+pc_step_size_t3_num = 10^(pc_step_size_t3_db/20);
 rx_gain_t3_db = 0;           % Gain of Rx antenna, in dB (just leave it at 0)
+bit_delay = floorDiv(data_rate_t3,rx_pc_sample_rate_t3);
 
 % Pre-allocating (for memory)
-carlo = 10;                  % Monte Carlo realizations (probably unneeded.)
+carlo = 1;                  % Monte Carlo realizations (probably unneeded.)
 ber_t3 = zeros(1,carlo);
+pc_symbols = zeros(length(ebno_t3_db),data_length_t3);
+pc_raw = zeros(length(ebno_t3_db),data_length_t3);
+pc_equalised = zeros(length(ebno_t3_db),data_length_t3);
+pc_decoded = zeros(length(ebno_t3_db),data_length_t3);
 
 % Theoretical Eb/No
 ebno_theoretical_t3_db = 0:2:30; % Comment if you want them to be the same
@@ -49,13 +55,33 @@ for d = 1:length(f_Doppler_t3)
             ber_t3(c) = sum(tx_data_binary_t3~=rx_decoded_t3(k,:)) / data_length_t3;
             
             % Equalisation with power control
-            % TO DO LATER
+            % huh whuh?
+            for s = 1:data_length_t3
+%                 disp(s);
+                step = pc_step_size_t3_num;
+                pc_symbols(k,s) = tx_data_bpsk_t3(s)*step;
+                pc_raw(k,s) = fading_channel_t3(d,s)*pc_symbols(k,s) + ...
+                10^(-ebno_t3_db(k)/20)*awgn_noise_t3(d,s);
+                pc_equalised(k,s) = pc_raw(k,s)/fading_channel_t3(d,s);
+                
+                if (20*log10(abs(pc_equalised(k,s))) < 10 && mod(s,bit_delay)==0)
+                    step = step + 0.1;
+                    disp('Step increased by 0.1');
+                elseif (20*log10(abs(pc_equalised(k,s))) > 10 && mod(s,bit_delay)==0)
+                    step = step - 0.1;
+                    disp('Step decreased by 0.1');
+                end
+            end
+            pc_decoded(k,:) = bpsk_demodulate(pc_equalised(k,:));
+            pc_ber = sum(tx_data_binary_t3~=pc_decoded(k,:)) / data_length_t3;
         end
         mean_ber_t3(d,k) = mean(ber_t3);
+        mean_pc_ber(d,k) = mean(pc_ber);
     end
     figure(d);
     semilogy(ebno_t3_db, mean_ber_t3(d,:),'-o',LineWidth=1);
     hold on;
+    semilogy(ebno_t3_db, mean_pc_ber(d,:),'-x',LineWidth=1);
     semilogy(ebno_theoretical_t3_db, ber_theoretical_t3,'--g',LineWidth=1.5);
     grid on;
     hold off;
@@ -63,8 +89,10 @@ for d = 1:length(f_Doppler_t3)
     ylim([1e-6 1e0]);
     xlabel("Eb/No (dB)");
     ylabel("Bit Error Rate");
-    legend('Simulated fading ch. sans power control', 'Theoretical flat fading ch., 'Location', 'southeast')
+    legend('Simulated fading ch. sans power control', 'Simulated fading ch. with power control', 'Theoretical flat fading ch.', 'Location', 'southeast')
     a = strcat('fD = ',num2str(f_Doppler_t3(d)));
     legend boxoff;
     title('BER performance in a Rayleigh fading channel',strcat('Doppler shift freq. ' ,num2str(f_Doppler_t3(d)),'Hz'));
 end
+
+disp("D- done...?")
