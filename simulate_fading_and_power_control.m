@@ -1,17 +1,20 @@
 % Power Control
 % Muhammad Sulthan Ariq (18119034)
 % 2022.12.18
+% Please note that _t3 is just marking that the variables are in use for
+% Task #3 and has no other meaning.
 
 clc;
 % clear;
 % close all;
 clf;
 
+% Data
 data_length_t3 = 1e6;
 ebno_t3_db = 0:5:25;
-f_Doppler_t3 = [15 30 180]; % Doppler shift frequency in Hz
-f_power_control_t3 = 1800; % Power control sampling rate in Hz
-data_rate_t3 = 64e3; % in bits per second (bps)
+f_Doppler_t3 = [15 30 180];     % Doppler shift frequency in Hz
+f_power_control_t3 = 1800;      % Power control sampling rate in Hz
+data_rate_t3 = 64e3;            % in bits per second (bps)
 
 % carlo_t3 = 1; % Monte Carlo
 
@@ -29,14 +32,20 @@ fading_channel_t3 = zeros(length(f_Doppler_t3), data_length_t3);
 % fading_var_t3 = ones(length(f_Doppler_t3), 1);
 
 % System characteristics
-tx_power_t3 = 1; % Transmit power at Tx, in Watts
-target_ebno_t3_db = 10; 
+% This is to simulate (large-scale) path loss
+tx_power_t3 = 0.5;          % Transmit power at Tx, in Watts
+tx_gain_t3_db = 30;         % Transmitter gain at Tx, in dB
+tx_mod_freq_t3 = 3.5e9;     % Modulation frequency, in Hz
+distance_tx_rx_t3 = 60e3;   % Distance between Tx and Rx, in metres
+rx_gain_t3_db = 60;         % Receiver gain at Rx, in dB
+% target_ebno_t3_db = 10;   % Likely unneeded
+path_loss = tx_power_t3 * 10^(tx_gain_t3_db/10 + rx_gain_t3_db/10) * (physconst('Lightspeed')/(4*pi*distance_tx_rx_t3*tx_mod_freq_t3))^2
 
 for m = 1:length(f_Doppler_t3)
     for k = 1:length(ebno_t3_db)
         % Tx
         tx_data_binary_t3(m,:) = randi([0 1], data_length_t3, 1); % Generates binary [0 1] code of size data_length x 1
-        tx_data_bpsk_t3(m,:) = tx_power_t3.*bpsk_modulate(tx_data_binary_t3(m,:)); % Modulates bit stream into symbol stream with BPSK
+        tx_data_bpsk_t3(m,:) = bpsk_modulate(tx_data_binary_t3(m,:)); % Modulates bit stream into symbol stream with BPSK
 
         % Channel
             % Fading channel configuration
@@ -46,10 +55,10 @@ for m = 1:length(f_Doppler_t3)
         fading_channel_t3(m,:) = fading2(data_length_t3, f_Doppler_t3(m), 1/data_rate_t3); % Using someone else's code
 %         fading_var_t3(j) = sum(abs(fading_channel_t3.*tx_data_bpsk_t3(j,:)).^2/data_length_t3); % Let's say no variance for now
         awgn_noise_t3(m,:) = (1/sqrt(2))*(randn(data_length_t3, 1)+1i*randn(data_length_t3, 1)); % Generates noise according to Eb/No
-        rx_raw_t3(m,:) = tx_data_bpsk_t3(m,:).*fading_channel_t3(m,:) + 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(m,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
+        rx_raw_t3(m,:) = path_loss*tx_data_bpsk_t3(m,:).*fading_channel_t3(m,:) + 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(m,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
 
         % Rx
-        rx_controlled_t3(m,:) = power_control(rx_raw_t3(m,:),data_rate_t3,-30,0.5,f_power_control_t3);
+        rx_controlled_t3(m,:) = power_control(rx_raw_t3(m,:),data_rate_t3,-30,10,f_power_control_t3);
         rx_equalised_t3(m,:) = rx_controlled_t3(m,:)./fading_channel_t3(m,:); % Equalizing according to fading channel estimation, for now assume Rx knows exactly what the channel characteristics are
         rx_decoded_t3(m,:) = bpsk_demodulate(rx_equalised_t3(m,:)); % Demodulates symbol stream into bitstream
         ber_t3(k,m) = sum(tx_data_binary_t3(m,:)~=rx_decoded_t3(m,:)) / data_length_t3;

@@ -14,11 +14,16 @@ end
 
     for m = 1:length(received_signal)
         iterations = 1;
-        disp(['Currently being processed: ' num2str(received_signal(m)) ' (' num2str(10*log10(abs(processed_signal(m))/1e-3)) ' dBm)'])
+%         disp(['Currently being processed: ' num2str(received_signal(m)) ' (' num2str(10*log10(abs(processed_signal(m))/1e-3)) ' dBm)'])
         while (abs(processed_signal(m)) < limit_num && iterations <= iterate_limit)
-            disp(['Iteration: ' num2str(iterations) ', at ' num2str(10*log10(abs(processed_signal(m))/1e-3))]);
-            processed_signal(m) = abs(processed_signal(m)) * 10^(-3+(control_power/10)) * exp(1i*angle(processed_signal(m)));
-%             processed_signal(m) = 10^(3+((10*log10(abs(processed_signal(m))/1e-3) + control_power)/10)) * exp(angle(processed_signal(m)));
+%             disp(['Iteration: ' num2str(iterations) ', at ' num2str(10*log10(abs(processed_signal(m))/1e-3))]);
+            processed_signal(m) = abs(processed_signal(m)) * 10^(control_power/10) * exp(1i*angle(processed_signal(m)));
+            % note an *increase* in X dBm is the same as an increase in X
+            % dBW, they're both dB.
+%             processed_signal(m) =
+%             10^(3+((10*log10(abs(processed_signal(m))/1e-3) + ...
+%             control_power)/10)) * exp(angle(processed_signal(m))); % this
+%             didnt work
             iterations = iterations + 1;
         end
     end
