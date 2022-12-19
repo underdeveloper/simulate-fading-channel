@@ -58,7 +58,7 @@ for m = 1:length(f_Doppler_t3)
         rx_raw_t3(m,:) = path_loss*(tx_data_bpsk_t3(m,:).*fading_channel_t3(m,:) + 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(m,:)); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
 
         % Rx
-        rx_controlled_t3(m,:) = power_control(rx_raw_t3(m,:),f_Doppler_t3(m),20,10,f_power_control_t3);
+        rx_controlled_t3(m,:) = power_control(rx_raw_t3(m,:),f_Doppler_t3(m),10,f_power_control_t3);
         rx_equalised_t3(m,:) = rx_controlled_t3(m,:)./fading_channel_t3(m,:); % Equalizing according to fading channel estimation, for now assume Rx knows exactly what the channel characteristics are
         rx_decoded_t3(m,:) = bpsk_demodulate(rx_equalised_t3(m,:)); % Demodulates symbol stream into bitstream
         ber_t3(k,m) = sum(tx_data_binary_t3(m,:)~=rx_decoded_t3(m,:)) / data_length_t3;
