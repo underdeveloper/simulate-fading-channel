@@ -19,7 +19,8 @@ tx_power_t3 = 1;             % Power transmitted by Tx, in Watts (just set it to
 
 % Receiving side
 rx_pc_sample_rate_t3 = 1800; % Power control sampling rate in Hz
-pc_step_size_t3_db = 0;  % Power control step size, in dB    
+pc_limit = 10; % Bound for power control, in dBW
+pc_step_size_t3_db = 0.827853;  % Power control step size, in dB    
 pc_step_size_t3_num = 10^(pc_step_size_t3_db/20);
 rx_gain_t3_db = 0;           % Gain of Rx antenna, in dB (just leave it at 0)
 bit_delay = floorDiv(data_rate_t3,rx_pc_sample_rate_t3);
@@ -56,20 +57,20 @@ for d = 1:length(f_Doppler_t3)
             
             % Equalisation with power control
             % huh whuh?
+            step = 1;
             for s = 1:data_length_t3
 %                 disp(s);
-                step = pc_step_size_t3_num;
                 pc_symbols(k,s) = tx_data_bpsk_t3(s)*step;
                 pc_raw(k,s) = fading_channel_t3(d,s)*pc_symbols(k,s) + ...
                 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(d,s);
                 pc_equalised(k,s) = pc_raw(k,s)/fading_channel_t3(d,s);
                 
-                if (20*log10(abs(pc_equalised(k,s))) < 10 && mod(s,bit_delay)==0)
-                    step = step + 0.1;
-                    disp('Step increased by 0.1');
-                elseif (20*log10(abs(pc_equalised(k,s))) > 10 && mod(s,bit_delay)==0)
-                    step = step - 0.1;
-                    disp('Step decreased by 0.1');
+                if (20*log10(abs(pc_equalised(k,s))) < pc_limit && mod(s,bit_delay)==0)
+                    step = step * 10^(pc_step_size_t3_db/20);
+%                     disp(strcat('Step increased by ', num2str(pc_step_size_t3_num)));
+                elseif (20*log10(abs(pc_equalised(k,s))) > pc_limit && mod(s,bit_delay)==0)
+                    step = step * 10^(-pc_step_size_t3_db/20);
+%                     disp(strcat('Step decreased by ', num2str(pc_step_size_t3_num)));
                 end
             end
             pc_decoded(k,:) = bpsk_demodulate(pc_equalised(k,:));
