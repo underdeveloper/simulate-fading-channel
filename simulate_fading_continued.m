@@ -28,6 +28,13 @@ bit_delay = floorDiv(data_rate_t3,rx_pc_sample_rate_t3);
 % Pre-allocating (for memory)
 carlo = 1;                  % Monte Carlo realizations (probably unneeded.)
 ber_t3 = zeros(1,carlo);
+fading_channel_t3 = zeros(length(f_Doppler_t3),data_length_t3);
+var_fading_t3 = zeros(length(f_Doppler_t3),data_length_t3);
+awgn_noise_t3 = zeros(length(f_Doppler_t3),data_length_t3);
+rx_raw_t3 = zeros(length(ebno_t3_db),data_length_t3);
+rx_equalised_t3 = zeros(length(ebno_t3_db),data_length_t3);
+rx_decoded_t3 = zeros(length(ebno_t3_db),data_length_t3);
+
 pc_symbols = zeros(length(ebno_t3_db),data_length_t3);
 pc_raw = zeros(length(ebno_t3_db),data_length_t3);
 pc_equalised = zeros(length(ebno_t3_db),data_length_t3);
@@ -56,23 +63,26 @@ for d = 1:length(f_Doppler_t3)
             ber_t3(c) = sum(tx_data_binary_t3~=rx_decoded_t3(k,:)) / data_length_t3;
             
             % Equalisation with power control
-            % huh whuh?
-            step = 1;
-            for s = 1:data_length_t3
-%                 disp(s);
-                pc_symbols(k,s) = tx_data_bpsk_t3(s)*step;
-                pc_raw(k,s) = fading_channel_t3(d,s)*pc_symbols(k,s) + ...
-                10^(-ebno_t3_db(k)/20)*awgn_noise_t3(d,s);
-                pc_equalised(k,s) = pc_raw(k,s)/fading_channel_t3(d,s);
-                
-                if (20*log10(abs(pc_equalised(k,s))) < pc_limit && mod(s,bit_delay)==0)
-                    step = step * 10^(pc_step_size_t3_db/20);
-%                     disp(strcat('Step increased by ', num2str(pc_step_size_t3_num)));
-                elseif (20*log10(abs(pc_equalised(k,s))) > pc_limit && mod(s,bit_delay)==0)
-                    step = step * 10^(-pc_step_size_t3_db/20);
-%                     disp(strcat('Step decreased by ', num2str(pc_step_size_t3_num)));
-                end
-            end
+            pc_equalised(k,:) = power_control2(tx_data_bpsk_t3,ebno_t3_db(k),awgn_noise_t3(d,:),fading_channel_t3(d,:),pc_step_size_t3_db,bit_delay,10);
+
+%             % huh whuh?
+%             vector = 1;
+%             for s = 1:data_length_t3
+% %                 disp(s);
+%                 pc_symbols(k,s) = tx_data_bpsk_t3(s)*vector;
+%                 pc_raw(k,s) = fading_channel_t3(d,s)*pc_symbols(k,s) + ...
+%                 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(d,s);
+%                 pc_equalised(k,s) = pc_raw(k,s)/fading_channel_t3(d,s);
+%                 
+%                 if (20*log10(abs(pc_equalised(k,s))) < pc_limit && mod(s,bit_delay)==0)
+%                     vector = vector * 10^(pc_step_size_t3_db/20);
+% %                     disp(strcat('Step increased by ', num2str(pc_step_size_t3_num)));
+%                 elseif (20*log10(abs(pc_equalised(k,s))) > pc_limit && mod(s,bit_delay)==0)
+%                     vector = vector * 10^(-pc_step_size_t3_db/20);
+% %                     disp(strcat('Step decreased by ', num2str(pc_step_size_t3_num)));
+%                 end
+%             end
+
             pc_decoded(k,:) = bpsk_demodulate(pc_equalised(k,:));
             pc_ber = sum(tx_data_binary_t3~=pc_decoded(k,:)) / data_length_t3;
         end
