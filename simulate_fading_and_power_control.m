@@ -4,7 +4,7 @@
 % Please note that _t3 is just marking that the variables are in use for
 % Task #3 and has no other meaning.
 
-clc;
+% clc;
 % clear;
 % close all;
 clf;
@@ -39,7 +39,7 @@ tx_mod_freq_t3 = 3.5e9;     % Modulation frequency, in Hz
 distance_tx_rx_t3 = 60e3;   % Distance between Tx and Rx, in metres
 rx_gain_t3_db = 60;         % Receiver gain at Rx, in dB
 % target_ebno_t3_db = 10;   % Likely unneeded
-path_loss = tx_power_t3 * 10^(tx_gain_t3_db/10 + rx_gain_t3_db/10) * (physconst('Lightspeed')/(4*pi*distance_tx_rx_t3*tx_mod_freq_t3))^2
+path_loss = tx_power_t3 * 10^(tx_gain_t3_db/10 + rx_gain_t3_db/10) * (physconst('Lightspeed')/(4*pi*distance_tx_rx_t3*tx_mod_freq_t3))^2;
 
 for m = 1:length(f_Doppler_t3)
     for k = 1:length(ebno_t3_db)
@@ -55,10 +55,10 @@ for m = 1:length(f_Doppler_t3)
         fading_channel_t3(m,:) = fading2(data_length_t3, f_Doppler_t3(m), 1/data_rate_t3); % Using someone else's code
 %         fading_var_t3(j) = sum(abs(fading_channel_t3.*tx_data_bpsk_t3(j,:)).^2/data_length_t3); % Let's say no variance for now
         awgn_noise_t3(m,:) = (1/sqrt(2))*(randn(data_length_t3, 1)+1i*randn(data_length_t3, 1)); % Generates noise according to Eb/No
-        rx_raw_t3(m,:) = path_loss*tx_data_bpsk_t3(m,:).*fading_channel_t3(m,:) + 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(m,:); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
+        rx_raw_t3(m,:) = path_loss*(tx_data_bpsk_t3(m,:).*fading_channel_t3(m,:) + 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(m,:)); % Combines symbol stream with fading channel with per-element multiplication, then noise channel by simple addition
 
         % Rx
-        rx_controlled_t3(m,:) = power_control(rx_raw_t3(m,:),data_rate_t3,-30,10,f_power_control_t3);
+        rx_controlled_t3(m,:) = power_control(rx_raw_t3(m,:),f_Doppler_t3(m),20,10,f_power_control_t3);
         rx_equalised_t3(m,:) = rx_controlled_t3(m,:)./fading_channel_t3(m,:); % Equalizing according to fading channel estimation, for now assume Rx knows exactly what the channel characteristics are
         rx_decoded_t3(m,:) = bpsk_demodulate(rx_equalised_t3(m,:)); % Demodulates symbol stream into bitstream
         ber_t3(k,m) = sum(tx_data_binary_t3(m,:)~=rx_decoded_t3(m,:)) / data_length_t3;
@@ -77,7 +77,7 @@ figure(5)
 semilogy(ebno_t3_db, ber_t3(:,1),'-o','color','#22b800',LineWidth=1); % fd = 15 Hz
 hold on;
 semilogy(ebno_t3_db, ber_t3(:,2),'-o','color','#c49300',LineWidth=1); % fd = 30 Hz
-semilogy(ebno_t3_db, ber_t3(:,3),'-o','color','#bf1d00',LineWidth=1); % fd = 180 Hz
+% semilogy(ebno_t3_db, ber_t3(:,3),'-o','color','#bf1d00',LineWidth=1); % fd = 180 Hz
 semilogy(ebno_theoretical_t3_db, ber_theoretical_t3,'--g','color','#9e1708',LineWidth=1.5);
 grid on;
 xlim([0 30]);
