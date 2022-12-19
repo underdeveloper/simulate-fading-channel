@@ -12,7 +12,7 @@ ebno_t2_db = 0:5:25;
 f_Doppler_t2 = 30; % Doppler shift frequency in Hz
 data_rate_t2 = 64e3; % in bits per second (bps)
 
-carlo_t2 = 1; % Monte Carlo
+carlo_t2 = 5; % Monte Carlo
 
 % Preallocating memory (for performance reasons)
 % There's actually no need to do this if data_length is relatively small I just like doing it
@@ -61,6 +61,7 @@ ber_theoretical_t2 = 0.5*(1-(sqrt((ebno_theoretical_t2)./(1+ebno_theoretical_t2)
 
 % Plotting whopee
 figure(3)
+set(gcf,'Position',[100 100 800 600])
 semilogy(ebno_t2_db, mean_ber_t2,'-r','marker','o','color','#e04f3f',LineWidth=1);
 hold on;
 semilogy(ebno_theoretical_t2_db, ber_theoretical_t2,'--g','color','#9e1708',LineWidth=1.5);
@@ -69,7 +70,7 @@ xlim([0 30]);
 ylim([1e-6 1e0]);
 xlabel("Eb/No (dB)");
 ylabel("Bit Error Rate");
-legend('Simulated Rayleigh fading channel', 'Theoretical Rayleigh fading channel', 'Location', 'southeast');
+legend('Simulated Rayleigh fading channel (fD = 30Hz)', 'Theoretical Rayleigh fading channel', 'Location', 'southeast');
 legend boxoff;
 title("BER Performance in a Rayleigh fading channel");
 

@@ -49,6 +49,7 @@ ber_theoretical_t1 = 0.5*(erfc(sqrt(ebno_theoretical_t1_num)));
 
 % Plotting whopee
 figure(1)
+set(gcf,'Position',[100 100 800 600])
 semilogy(ebno_t1_db, mean_ber_t1,'-r','marker','o','color','#1ef7f4',LineWidth=2);
 hold on;
 semilogy(ebno_theoretical_t1_db, ber_theoretical_t1,'--g','color','#0988ba',LineWidth=2);

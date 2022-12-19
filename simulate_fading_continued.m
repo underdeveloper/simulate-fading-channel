@@ -26,10 +26,10 @@ rx_gain_t3_db = 0;           % Gain of Rx antenna, in dB (just leave it at 0)
 bit_delay = floorDiv(data_rate_t3,rx_pc_sample_rate_t3);
 
 % Pre-allocating (for memory)
-carlo = 1;                  % Monte Carlo realizations (probably unneeded.)
+carlo = 5;                  % Monte Carlo realizations (probably unneeded.)
 ber_t3 = zeros(1,carlo);
 fading_channel_t3 = zeros(length(f_Doppler_t3),data_length_t3);
-var_fading_t3 = zeros(length(f_Doppler_t3),data_length_t3);
+var_fading_t3 = ones(length(f_Doppler_t3),data_length_t3);
 awgn_noise_t3 = zeros(length(f_Doppler_t3),data_length_t3);
 rx_raw_t3 = zeros(length(ebno_t3_db),data_length_t3);
 rx_equalised_t3 = zeros(length(ebno_t3_db),data_length_t3);
@@ -56,7 +56,11 @@ for d = 1:length(f_Doppler_t3)
     % Channel
     fading_channel_t3(d,:) = fading2(data_length_t3,f_Doppler_t3(d),1/data_rate_t3);
     var_fading_t3(d,:) = sum(abs(fading_channel_t3(d,:).*tx_data_bpsk_t3.^2/data_length_t3));
-    awgn_noise_t3(d,:) = 1/sqrt(2./var_fading_t3(d,:))*(randn(data_length_t3, 1)+1i*randn(data_length_t3, 1));
+    awgn_noise_t3(d,:) = 1/sqrt(2)*(randn(data_length_t3, 1)+1i*randn(data_length_t3, 1)).*var_fading_t3(d,:)';
+    % sidenote: why does this suddenly need ./ ? it didn't used to before.
+    % was there a sudden matlab update that retcons this? i hate this
+    % language so much man god
+    % IT DOESNT BLOODY WORK AGAIN!!! WHAT THE!!!
     for k = 1:length(ebno_t3_db)
         for c = 1:carlo
             rx_raw_t3(k,:) = tx_data_bpsk_t3.*fading_channel_t3(d,:) + 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(d,:); 
@@ -67,24 +71,6 @@ for d = 1:length(f_Doppler_t3)
             
             % Equalisation with power control
             pc_equalised(k,:) = power_control2(tx_data_bpsk_t3,ebno_t3_db(k),awgn_noise_t3(d,:),fading_channel_t3(d,:),pc_step_size_t3_db,bit_delay,10);
-
-%             % huh whuh?
-%             vector = 1;
-%             for s = 1:data_length_t3
-% %                 disp(s);
-%                 pc_symbols(k,s) = tx_data_bpsk_t3(s)*vector;
-%                 pc_raw(k,s) = fading_channel_t3(d,s)*pc_symbols(k,s) + ...
-%                 10^(-ebno_t3_db(k)/20)*awgn_noise_t3(d,s);
-%                 pc_equalised(k,s) = pc_raw(k,s)/fading_channel_t3(d,s);
-%                 
-%                 if (20*log10(abs(pc_equalised(k,s))) < pc_limit && mod(s,bit_delay)==0)
-%                     vector = vector * 10^(pc_step_size_t3_db/20);
-% %                     disp(strcat('Step increased by ', num2str(pc_step_size_t3_num)));
-%                 elseif (20*log10(abs(pc_equalised(k,s))) > pc_limit && mod(s,bit_delay)==0)
-%                     vector = vector * 10^(-pc_step_size_t3_db/20);
-% %                     disp(strcat('Step decreased by ', num2str(pc_step_size_t3_num)));
-%                 end
-%             end
 
             pc_decoded(k,:) = bpsk_demodulate(pc_equalised(k,:));
             pc_ber = sum(tx_data_binary_t3~=pc_decoded(k,:)) / data_length_t3;
@@ -108,18 +94,18 @@ for d = 1:length(f_Doppler_t3)
     title('BER performance in a Rayleigh fading channel',strcat('Doppler shift freq. ' ,num2str(f_Doppler_t3(d)),'Hz'));
 
     figure(d+length(f_Doppler_t3));
-    semilogy(20*log10(abs(rx_equalised_t3)),'--',LineWidth=0.7);
+    plot(20*log10(abs(rx_equalised_t3(d,:))),'--','color','#1971ff',LineWidth=0.7);
     hold on;
-    semilogy(20*log10(abs(pc_equalised)),'-',LineWidth=1.2);
+    plot(20*log10(abs(pc_equalised(d,:))),'-','color','#32a800',LineWidth=1.2);
     grid on;
     hold off;
-    ylim([1e-4 1e2])
+    ylim([-50 30])
     xlabel("Symbol");
-    ylabel("Power")
+    ylabel("Power (dB)")
     legend('sans power control', 'with power control', 'Location', 'southeast')
     legend boxoff;
     title('Signal power at Rx after a Rayleigh fading channel',strcat('Doppler shift freq. ' ,num2str(f_Doppler_t3(d)),'Hz'))
-    
+
 end
 
 disp("D- done...?")
