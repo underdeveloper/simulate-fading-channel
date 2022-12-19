@@ -40,6 +40,9 @@ pc_raw = zeros(length(ebno_t3_db),data_length_t3);
 pc_equalised = zeros(length(ebno_t3_db),data_length_t3);
 pc_decoded = zeros(length(ebno_t3_db),data_length_t3);
 
+mean_ber_t3 = zeros(length(f_Doppler_t3), length(ebno_t3_db));
+mean_pc_ber = zeros(length(f_Doppler_t3), length(ebno_t3_db));
+
 % Theoretical Eb/No
 ebno_theoretical_t3_db = 0:2:30; % Comment if you want them to be the same
 ebno_theoretical_t3 = 10.^(ebno_theoretical_t3_db/10);
@@ -101,9 +104,22 @@ for d = 1:length(f_Doppler_t3)
     xlabel("Eb/No (dB)");
     ylabel("Bit Error Rate");
     legend('Simulated fading ch. sans power control', 'Simulated fading ch. with power control', 'Theoretical flat fading ch.', 'Location', 'southeast')
-    a = strcat('fD = ',num2str(f_Doppler_t3(d)));
     legend boxoff;
     title('BER performance in a Rayleigh fading channel',strcat('Doppler shift freq. ' ,num2str(f_Doppler_t3(d)),'Hz'));
+
+    figure(d+length(f_Doppler_t3));
+    semilogy(20*log10(abs(rx_equalised_t3)),'--',LineWidth=0.7);
+    hold on;
+    semilogy(20*log10(abs(pc_equalised)),'-',LineWidth=1.2);
+    grid on;
+    hold off;
+    ylim([1e-4 1e2])
+    xlabel("Symbol");
+    ylabel("Power")
+    legend('sans power control', 'with power control', 'Location', 'southeast')
+    legend boxoff;
+    title('Signal power at Rx after a Rayleigh fading channel',strcat('Doppler shift freq. ' ,num2str(f_Doppler_t3(d)),'Hz'))
+    
 end
 
 disp("D- done...?")
